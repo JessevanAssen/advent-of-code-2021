@@ -1,9 +1,15 @@
 /**
  * @typedef {'inp'|'add'|'mul'|'div'|'mod'|'eql'} Command
+ * @typedef {[number, number, number, number]} Register
+ * @typedef {(register: Register, inputGenerator: () => number) => void} Instruction
+ * @typedef {(input: number) => number} Program
  */
 
 import { repeat } from 'ramda';
 import { readBlocksFromStdin } from '../lib/index.js';
+import { Timings } from '../lib/timings.js';
+
+const { measure, report } = Timings();
 
 /**
  * @returns {[string, string, string?][]}
@@ -11,6 +17,59 @@ import { readBlocksFromStdin } from '../lib/index.js';
 function parseInput() {
 	return [...readBlocksFromStdin()]
 		.map(line => line.split(' ', 3));
+}
+
+/**
+ * @param {[string, string, string?][]} program
+ * @returns {Program}
+ */
+function compile(program) {
+	const toRegisterIndex = label => label.codePointAt(0) - 'w'.codePointAt(0);
+	const isRegister = label => 'wxyz'.includes(label);
+
+	/** @type {Instruction[]} */
+	const instructions = program.map(([command, arg0, arg1]) => {
+		const targetIndex = toRegisterIndex(arg0);
+
+		if (command === 'inp') {
+			return (register, inputGenerator) => { register[targetIndex] = inputGenerator(); };
+		}
+
+		if (isRegister(arg1)) {
+			const sourceIndex = toRegisterIndex(arg1);
+			switch (command) {
+				case 'add': return (register) => { register[targetIndex] += register[sourceIndex]; };
+				case 'mul': return (register) => { register[targetIndex] *= register[sourceIndex]; };
+				case 'div': return (register) => { register[targetIndex] = Math.floor(register[targetIndex] / register[sourceIndex]); };
+				case 'mod': return (register) => { register[targetIndex] %= register[sourceIndex]; };
+				case 'eql': return (register) => { register[targetIndex] = register[targetIndex] === register[sourceIndex] ? 1 : 0 };
+			}
+		} else {
+			const literal = Number(arg1);
+			switch (command) {
+				case 'add': return (register) => { register[targetIndex] += literal; };
+				case 'mul': return (register) => { register[targetIndex] *= literal; };
+				case 'div': return (register) => { register[targetIndex] = Math.floor(register[targetIndex] / literal); };
+				case 'mod': return (register) => { register[targetIndex] %= literal; };
+				case 'eql': return (register) => { register[targetIndex] = register[targetIndex] === literal ? 1 : 0 };
+			}
+		}
+	});
+
+	return (input) => {
+		/** @type {Register} */ const register = [0, 0, 0, 0];
+		const inputGenerator = ((input) => {
+			const input_ = input.toString();
+			let i = 0;
+			return () => Number(input_[i++]);
+		})(input);
+
+		for (const instruction of instructions) {
+			instruction(register, inputGenerator);
+		}
+
+		return register[3];
+	}
 }
 
 function Machine() {
@@ -130,3 +189,12 @@ function processDigit(previous, current, index) {
 }
 
 const instructions = parseInput();
+const program = compile(instructions);
+
+for (let i = 12345678901234; i < 12345679901234; i++) {
+	measure('before', () => { execute(i.toString()) });
+	measure('after', () => { program(i); });
+	measure('by hand', () => [...i.toString()].map(x => Number(x)).reduce(processDigit, 0))
+}
+
+report();
