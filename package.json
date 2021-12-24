@@ -25,6 +25,7 @@
 		"21": "node ./src/21/main.js",
 		"22": "node ./src/22/main.js",
 		"23": "node ./src/23/main.js",
+		"24": "node ./src/24/main.js",
 		"25": "node ./src/25/main.js"
 	},
 	"dependencies": {
