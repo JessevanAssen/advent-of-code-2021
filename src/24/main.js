@@ -1,16 +1,12 @@
 /**
  * @typedef {'inp'|'add'|'mul'|'div'|'mod'|'eql'} Command
- * @typedef {[number, number, number, number]} Register
  */
 
 import { repeat } from 'ramda';
 import { readBlocksFromStdin } from '../lib/index.js';
-import { Timings } from '../lib/timings.js';
-
-const {measure, report} = Timings();
 
 /**
- * @returns {[Command, string, string?][]}
+ * @returns {[string, string, string?][]}
  */
 function parseInput() {
 	return [...readBlocksFromStdin()]
@@ -133,28 +129,4 @@ function processDigit(previous, current, index) {
 	return z;
 }
 
-/**
- * @param {number} input
- */
-function processInput(input) {
-	return [...input.toString().padStart(14, '0')]
-			.map(x => Number(x))
-			.reduce(processDigit, 0);
-}
-
-
 const instructions = parseInput();
-
-for (let i = 99999999999999; i >= 99999999999999 - 100000; i--) {
-	if (i.toString().includes('0')) { continue; }
-
-	const a = measure('a', () => execute(i.toString()).register[3]);
-	const b = measure('b', () => processInput(i));
-
-	if (a === 0) {
-		console.log(i);
-		break;
-	}
-}
-
-report();
