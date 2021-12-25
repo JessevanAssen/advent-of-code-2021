@@ -5,7 +5,7 @@
  * @typedef {(input: number) => number} Program
  */
 
-import { repeat } from 'ramda';
+import { map, repeat } from 'ramda';
 import { readBlocksFromStdin } from '../lib/index.js';
 import { Timings } from '../lib/timings.js';
 
@@ -188,13 +188,48 @@ function processDigit(previous, current, index) {
 	return z;
 }
 
-const instructions = parseInput();
-const program = compile(instructions);
 
-for (let i = 12345678901234; i < 12345679901234; i++) {
-	measure('before', () => { execute(i.toString()) });
-	measure('after', () => { program(i); });
-	measure('by hand', () => [...i.toString()].map(x => Number(x)).reduce(processDigit, 0))
+// /**
+//  * @param {string} prefix
+//  * @param {Set<number>} possibleInputs
+//  */
+// function* solve(prefix = '', possibleInputs = new Set([0])) {
+// 	for (let j = 9; j >= 1; j--) {
+// 		for (const input of possibleInputs) {
+// 			const output = processDigit(input, j, prefix.length);
+// 			if (prefix.length === 14) {
+// 				if (output === 0) {
+// 					yield prefix;
+// 				}
+// 			} else {
+// 				yield*
+
+
+// 			}
+// 		}
+// 	}
+// }
+
+// console.log([...solve()]);
+
+let possibleInputs = new Map([[0, '']]);
+for (let i = 0; i < 14; i++) {
+	const outputs = new Map();
+	for (const [input, prefix] of possibleInputs) {
+		// for (let j = 9; j >= 1; j--) {
+		for (let j = 1; j <= 9; j++) {
+			const value = processDigit(input, j, i);
+			if (!outputs.has(value)) {
+				outputs.set(value, prefix + j);
+			}
+		}
+	}
+	possibleInputs = outputs;
 }
+console.log(possibleInputs.get(0));
+
+// const instructions = parseInput();
+// const program = compile(instructions);
+
 
 report();
